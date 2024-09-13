@@ -1,0 +1,15 @@
+{
+    "HeroSection.discoverOffers": "Découvrez des offres incroyables",
+    "HeroSection.exclusiveDiscounts": "Profitez de réductions exclusives sur nos meilleurs produits.",
+    "HeroSection.getStarted": "Commencer",
+    "HeroSection.speakToSales": "Parlez aux ventes",
+    "contentBody.chargement": "Chargement en cours ...",
+    "contentBody.erreur": "Erreur de chargement",
+    "contentBody.AddProduct": "Ajouter un produit",
+    "ProductList.ProduitSpecial": "Produits Spéciaux pour Vous",
+    "ProductList.AucunProduit": "Aucun produit correspondant trouvé.",
+    "ProductList.VoirPlus": "Voir plus",
+    "addProductModal.AddProduct": "Ajouter un nouveau priduit",
+    "addProductModal.Cancel": "Annuler",
+    "addProductModal.Submit": "Enregistrer"
+}

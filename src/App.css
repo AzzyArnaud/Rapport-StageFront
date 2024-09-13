@@ -1,0 +1,17 @@
+/* styles.css ou ton fichier de styles global */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* customDropdown.css */
+.custom-dropdown .p-dropdown {
+  background-color: #ffffff; /* Assure un fond blanc */
+  opacity: 1; /* Assure que l'opacité est à 100% */
+}
+
+.custom-dropdown .p-dropdown-items {
+  background-color: #ffffff; /* Assure que les éléments de la liste sont aussi opaques */
+}
