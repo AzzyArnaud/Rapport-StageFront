@@ -11,6 +11,7 @@ const initialProductState = {
   MARQUE_ARTICLE: "",
   DESCRIPTION_ARTICLE: "",
   ADRESSE_ARTICLE: "",
+  TELEPHONE: "",
   ID_CATEGORIE: "",
   IMAGE_1: null,
   IMAGE_2: null,
@@ -25,6 +26,7 @@ const AddProductModal = ({
 }) => {
   const [newProduct, setNewProduct] = useState(initialProductState);
   const [formErrors, setFormErrors] = useState({});
+  const [isloading, setIsloading] = useState(false);
   const [previewImages, setPreviewImages] = useState({
     IMAGE_1: null,
     IMAGE_2: null,
@@ -81,6 +83,7 @@ const AddProductModal = ({
       "DESCRIPTION_ARTICLE",
       "ADRESSE_ARTICLE",
       "ID_CATEGORIE",
+      "TELEPHONE",
       "IMAGE_1",
       "IMAGE_2",
       "IMAGE_3",
@@ -102,6 +105,7 @@ const AddProductModal = ({
     const STATUT_ARTICLE = 1;
     if (validateForm()) {
       try {
+        setIsloading(true);
         const formData = new FormData();
         Object.keys(newProduct).forEach((key) => {
           if (newProduct[key]) formData.append(key, newProduct[key]);
@@ -122,6 +126,8 @@ const AddProductModal = ({
         }
       } catch {
         setFormErrors({ submit: "Erreur lors de l'ajout du produit." });
+      } finally {
+        setIsloading(false);
       }
     }
   };
@@ -201,9 +207,10 @@ const AddProductModal = ({
       )}
       <div className="flex justify-end space-x-2 mt-4 mr-2">
         <Button
-          label={t("addProductModal.Cancel")}
+          label={!isloading ? t("addProductModal.Cancel") : "chargement...."}
           className="p-button-text border border-gray-300 rounded-md hover:bg-gray-100 p-2"
           onClick={onClose}
+          disabled={!isloading}
         />
         <Button
           label={t("addProductModal.Submit")}

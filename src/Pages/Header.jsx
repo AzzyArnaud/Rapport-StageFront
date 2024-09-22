@@ -156,7 +156,7 @@ function Header() {
           <div className="hidden lg:flex items-center space-x-1">
             <span className="text-sm">Produced By</span>
             <span className="font-semibold whitespace-nowrap">
-              Nexusx, Burundi
+              Azzy, Burundi
             </span>
           </div>
         </div>
@@ -175,7 +175,7 @@ function Header() {
         </div>
 
         <div className="flex items-center space-x-6 relative">
-          <button onClick={() => navigate("/cart")} className="text-xl">
+          {/* <button onClick={() => navigate("/cart")} className="text-xl">
             <FaShoppingCart />
           </button>
           <div className="relative">
@@ -183,7 +183,7 @@ function Header() {
             <span className="absolute top-0 right-0 bg-red-500 rounded-full text-xs w-4 h-4 flex items-center justify-center">
               2
             </span>
-          </div>
+          </div> */}
           {/* Language Icon and Dropdown */}
           <div ref={languageDropdownRef} className="relative">
             <button

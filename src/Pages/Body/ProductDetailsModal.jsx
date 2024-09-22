@@ -1,19 +1,79 @@
 import React, { useState, useEffect } from "react";
 import { Dialog } from "primereact/dialog";
-import "primeicons/primeicons.css"; // Importation des icônes
+import "primeicons/primeicons.css";
 import fetchApi from "../../helpers/fetchApi";
+import { useDispatch, useSelector } from "react-redux";
+import { userSelector } from "../../store/selectors/userSelector";
+import { io } from "socket.io-client"; // Importer Socket.IO Client
 
 const ProductDetailsModal = ({ showModal, onClose, product }) => {
   const [mainImage, setMainImage] = useState("");
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
   const [messages, setMessages] = useState([]);
+  const dispatch = useDispatch();
+  const userConnected = useSelector(userSelector);
+
+  const user = {
+    id_user: userConnected.user.ID_UTILISATEUR,
+    telephone: userConnected.user.TELEPHONE,
+  };
+
+  let socket;
 
   useEffect(() => {
     if (product) {
       setMainImage(product.IMAGES_1);
+      fetchMessages(); // Récupérer les messages au chargement du produit
+
+      // Établir la connexion avec Socket.IO
+      socket = io("http://localhost:8000");
+
+      socket.on("connect", () => {
+        console.log("Connexion établie avec Socket.IO !");
+      });
+
+      socket.on("chatMessage", (newMessage) => {
+        console.log("Message reçu :", newMessage);
+        setMessages((prevMessages) => [...prevMessages, newMessage]); // Ajoute le nouveau message
+      });
+
+      socket.on("disconnect", () => {
+        console.log("Connexion fermée !");
+      });
+
+      socket.on("error", (error) => {
+        console.error("Erreur Socket.IO :", error);
+      });
+
+      return () => {
+        socket.disconnect(); // Déconnexion lors du démontage
+      };
     }
   }, [product]);
+
+  const fetchMessages = async () => {
+    try {
+      const response = await fetchApi(
+        `/message/allMessage?articleId=${product.ID_ARTICLE}`
+      );
+      if (response.statusCode === 200) {
+        const formattedMessages = response.result.map((msg) => ({
+          text: msg.MESSAGE,
+          sent: true, // Ajuste selon la logique d'utilisateur
+          date: msg.DATE_ENVOYE,
+        }));
+        setMessages(formattedMessages); // Met à jour l'historique des messages
+      } else {
+        console.error(
+          "Erreur lors de la récupération des messages :",
+          response.message
+        );
+      }
+    } catch (error) {
+      console.error("Erreur réseau ou serveur :", error);
+    }
+  };
 
   const handleImageClick = (image) => {
     setMainImage(image);
@@ -21,8 +81,23 @@ const ProductDetailsModal = ({ showModal, onClose, product }) => {
 
   const handleChatSubmit = async () => {
     if (chatMessage.trim() !== "") {
+      const newMessage = {
+        text: chatMessage,
+        sent: true,
+        date: new Date().toISOString(),
+        ID_UTILISATEUR: user.id_user,
+        ID_ARTICLE: product.ID_ARTICLE,
+      };
+
+      // Envoi du message via Socket.IO
+      socket.emit("chatMessage", newMessage); // Utilisation de socket directement
+      setMessages((prevMessages) => [...prevMessages, newMessage]); // Mise à jour immédiate de l'affichage
+      setChatMessage("");
+
       const formData = new FormData();
       formData.append("MESSAGE", chatMessage);
+      formData.append("ID_UTILISATEUR", user.id_user);
+      formData.append("ID_ARTICLE", product.ID_ARTICLE);
 
       try {
         const response = await fetchApi("/message/send", {
@@ -32,19 +107,22 @@ const ProductDetailsModal = ({ showModal, onClose, product }) => {
 
         if (response.statusCode === 200) {
           const { MESSAGE, DATE_ENVOYE } = response.result;
-          setMessages([
-            ...messages,
-            { text: MESSAGE, sent: true, date: DATE_ENVOYE },
-          ]);
-          setChatMessage("");
+          // Mettre à jour la date du message avec la date réelle du serveur
+          setMessages((prevMessages) =>
+            prevMessages.map((msg, index) =>
+              index === prevMessages.length - 1
+                ? { ...msg, date: DATE_ENVOYE }
+                : msg
+            )
+          );
         } else {
           console.error(
-            "Erreur lors de l'envoi du message : ",
+            "Erreur lors de l'envoi du message :",
             response.message
           );
         }
       } catch (error) {
-        console.error("Erreur réseau ou serveur : ", error);
+        console.error("Erreur réseau ou serveur :", error);
       }
     }
   };
@@ -69,19 +147,20 @@ const ProductDetailsModal = ({ showModal, onClose, product }) => {
           <img
             src={mainImage}
             alt={product.NOM_ARTICLE}
-            className="w-full max-h-[400px] object-contain mb-4 rounded-lg"
+            className="w-full max-h-[200px] object-contain mb-4 rounded-lg"
           />
           <div className="flex justify-center gap-2 mb-4">
             {[product.IMAGES_1, product.IMAGES_2, product.IMAGES_3].map(
-              (image, index) => (
-                <img
-                  key={index}
-                  src={image}
-                  alt={`Thumbnail ${index + 1}`}
-                  className="w-16 h-16 object-cover cursor-pointer rounded-md border border-gray-200 hover:border-teal-500"
-                  onClick={() => handleImageClick(image)}
-                />
-              )
+              (image, index) =>
+                image && (
+                  <img
+                    key={index}
+                    src={image}
+                    alt={`Thumbnail ${index + 1}`}
+                    className="w-16 h-16 object-cover cursor-pointer rounded-md border border-gray-200 hover:border-teal-500"
+                    onClick={() => handleImageClick(image)}
+                  />
+                )
             )}
           </div>
           <div className="text-left">
@@ -100,13 +179,14 @@ const ProductDetailsModal = ({ showModal, onClose, product }) => {
 
       <div className="flex justify-end space-x-4 mt-4">
         <a
-          href="https://wa.me/25762717022"
+          href={`https://wa.me/${user?.telephone}`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-green-500 text-3xl hover:text-green-600 bg-white p-2 rounded-full"
         >
           <i className="pi pi-whatsapp"></i>
         </a>
+
         <i
           className="pi pi-comments text-blue-500 text-3xl hover:text-blue-600 cursor-pointer bg-white p-2 rounded-full"
           onClick={() => setIsChatOpen(!isChatOpen)}

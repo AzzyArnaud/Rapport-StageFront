@@ -4,7 +4,7 @@ import {
   FaInstagram,
   FaLinkedinIn,
   FaGithub,
-} from 'react-icons/fa';
+} from "react-icons/fa";
 
 const Footer = () => {
   return (
@@ -16,7 +16,9 @@ const Footer = () => {
           <div>
             <h3 className="text-xl font-semibold mb-2">Ndangira</h3>
             <p className="mb-4">
-              Une brève description de votre entreprise, de sa mission et de ses valeurs. Vous pouvez inclure des informations sur vos services ou produits principaux.
+              Une brève description de votre entreprise, de sa mission et de ses
+              valeurs. Vous pouvez inclure des informations sur vos services ou
+              produits principaux.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="hover:text-white">
@@ -42,16 +44,24 @@ const Footer = () => {
             <h3 className="text-xl font-semibold mb-4">Services</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="hover:text-white">Service 1</a>
+                <a href="#" className="hover:text-white">
+                  Service 1
+                </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">Service 2</a>
+                <a href="#" className="hover:text-white">
+                  Service 2
+                </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">Service 3</a>
+                <a href="#" className="hover:text-white">
+                  Service 3
+                </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">Service 4</a>
+                <a href="#" className="hover:text-white">
+                  Service 4
+                </a>
               </li>
             </ul>
           </div>
@@ -61,16 +71,24 @@ const Footer = () => {
             <h3 className="text-xl font-semibold mb-4">Ressources</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="hover:text-white">Blog</a>
+                <a href="#" className="hover:text-white">
+                  Blog
+                </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">FAQ</a>
+                <a href="#" className="hover:text-white">
+                  FAQ
+                </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">Support</a>
+                <a href="#" className="hover:text-white">
+                  Support
+                </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">Documentation</a>
+                <a href="#" className="hover:text-white">
+                  Documentation
+                </a>
               </li>
             </ul>
           </div>
@@ -80,13 +98,13 @@ const Footer = () => {
             <h3 className="text-xl font-semibold mb-4">Contactez-nous</h3>
             <ul className="space-y-2">
               <li>
-                <span>Adresse : A68 Etats-Unis kigobe-sud</span> 
+                <span>Adresse : Ngagara Q3 Avenue sangwe N 02</span>
               </li>
               <li>
-                <span>Téléphone : +257 68 490 363</span>
+                <span>Téléphone : +257 62 379 428</span>
               </li>
               <li>
-                <span>Email : info@nexustech.com</span>
+                <span>Email : azzyarnaud@gmail.com</span>
               </li>
             </ul>
           </div>
