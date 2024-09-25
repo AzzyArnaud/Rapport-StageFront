@@ -179,7 +179,9 @@ const ProductDetailsModal = ({ showModal, onClose, product }) => {
 
       <div className="flex justify-end space-x-4 mt-4">
         <a
-          href={`https://wa.me/${user?.telephone}`}
+          href={`https://wa.me/${
+            user ? "257" + user.telephone : ""
+          }?text=Bonjour, je suis intéressé par votre produit.`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-green-500 text-3xl hover:text-green-600 bg-white p-2 rounded-full"

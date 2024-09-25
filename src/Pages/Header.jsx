@@ -143,14 +143,16 @@ function Header() {
         <div className="flex items-center space-x-6">
           <Link to="/home">
             <div className="flex items-center space-x-2">
-              <div className="bg-white p-2 rounded-full">
+              <div className=" p-2 rounded-full">
                 <img
-                  src="./public/logo.jpeg"
+                  src="./public/logo.webp"
                   alt="Logo"
-                  className="h-6 w-6 rounded-md"
+                  className="h-10 w-10 rounded-full"
                 />
               </div>
-              <h1 className="text-xl font-bold whitespace-nowrap">NDANGIRA</h1>
+              <h1 className="text-xl font-bold whitespace-nowrap uppercase">
+                Marché Naturel
+              </h1>
             </div>
           </Link>
           <div className="hidden lg:flex items-center space-x-1">
@@ -268,7 +270,7 @@ function Header() {
                 {/* Logo et Nom */}
                 <div className="flex items-center space-x-2">
                   <img
-                    src="public/logo.jpeg"
+                    src="public/logo.webp"
                     alt="Logo"
                     className="h-8 w-8 rounded-md"
                   />
