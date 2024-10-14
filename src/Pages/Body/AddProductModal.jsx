@@ -3,15 +3,15 @@ import { Dialog } from "primereact/dialog";
 import { Dropdown } from "primereact/dropdown";
 import { Button } from "primereact/button";
 import fetchApi from "../../helpers/fetchApi";
-
 import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
+import { userSelector } from "../../store/selectors/userSelector";
 
 const initialProductState = {
   NOM_ARTICLE: "",
   MARQUE_ARTICLE: "",
   DESCRIPTION_ARTICLE: "",
   ADRESSE_ARTICLE: "",
-  TELEPHONE: "",
   ID_CATEGORIE: "",
   IMAGE_1: null,
   IMAGE_2: null,
@@ -26,12 +26,19 @@ const AddProductModal = ({
 }) => {
   const [newProduct, setNewProduct] = useState(initialProductState);
   const [formErrors, setFormErrors] = useState({});
-  const [isloading, setIsloading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [previewImages, setPreviewImages] = useState({
     IMAGE_1: null,
     IMAGE_2: null,
     IMAGE_3: null,
   });
+
+  const dispatch = useDispatch();
+  const userConnected = useSelector(userSelector);
+  const user = {
+    id_user: userConnected.user.ID_UTILISATEUR,
+    telephone: userConnected.user.TELEPHONE,
+  };
 
   useEffect(() => {
     if (showModal) {
@@ -83,12 +90,9 @@ const AddProductModal = ({
       "DESCRIPTION_ARTICLE",
       "ADRESSE_ARTICLE",
       "ID_CATEGORIE",
-      "TELEPHONE",
       "IMAGE_1",
       "IMAGE_2",
       "IMAGE_3",
-      "LATITUDE_ARTICLE",
-      "LONGITUDE_ARTICLE",
     ];
 
     requiredFields.forEach((field) => {
@@ -105,13 +109,14 @@ const AddProductModal = ({
     const STATUT_ARTICLE = 1;
     if (validateForm()) {
       try {
-        setIsloading(true);
+        setIsLoading(true);
         const formData = new FormData();
         Object.keys(newProduct).forEach((key) => {
           if (newProduct[key]) formData.append(key, newProduct[key]);
         });
 
         formData.append("STATUT_ARTICLE", STATUT_ARTICLE);
+        formData.append("ID_SELLER", user.id_user);
 
         const response = await fetchApi("/articles/add", {
           method: "POST",
@@ -127,7 +132,7 @@ const AddProductModal = ({
       } catch {
         setFormErrors({ submit: "Erreur lors de l'ajout du produit." });
       } finally {
-        setIsloading(false);
+        setIsLoading(false);
       }
     }
   };
@@ -162,7 +167,7 @@ const AddProductModal = ({
                 onChange={handleInputChange}
                 placeholder="Sélectionnez une catégorie"
                 className={`w-full border border-gray-300 p-2 rounded-md${
-                  formErrors.ID_CATEGORIE ? "p-invalid" : ""
+                  formErrors.ID_CATEGORIE ? " p-invalid" : ""
                 }`}
               />
             ) : field.startsWith("IMAGE_") ? (
@@ -189,7 +194,13 @@ const AddProductModal = ({
                 name={field}
                 value={newProduct[field]}
                 onChange={handleInputChange}
-                placeholder={`Entrez ${field.replace("_", " ").toLowerCase()}`}
+                placeholder={
+                  field === "NOM_ARTICLE"
+                    ? "Entrez un nom du produit"
+                    : field === "DESCRIPTION_ARTICLE"
+                    ? "Entrez une description du produit"
+                    : `Entrez ${field.replace("_", " ").toLowerCase()}`
+                }
                 className={`w-full p-2 border ${
                   formErrors[field] ? "border-red-500" : "border-gray-300"
                 } rounded-md`}
@@ -207,15 +218,18 @@ const AddProductModal = ({
       )}
       <div className="flex justify-end space-x-2 mt-4 mr-2">
         <Button
-          label={!isloading ? t("addProductModal.Cancel") : "chargement...."}
+          label={t("addProductModal.Cancel")}
           className="p-button-text border border-gray-300 rounded-md hover:bg-gray-100 p-2"
           onClick={onClose}
-          disabled={!isloading}
+          disabled={isLoading}
         />
         <Button
-          label={t("addProductModal.Submit")}
+          label={
+            !isLoading ? t("addProductModal.Submit") : "chargement........"
+          }
           className="p-button-success bg-teal-500 p-1 text-white hover:bg-teal-600 rounded-md"
           onClick={handleFormSubmit}
+          disabled={isLoading}
         />
       </div>
     </Dialog>

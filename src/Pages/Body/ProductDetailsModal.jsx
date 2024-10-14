@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Dialog } from "primereact/dialog";
 import "primeicons/primeicons.css";
 import fetchApi from "../../helpers/fetchApi";
@@ -11,6 +11,7 @@ const ProductDetailsModal = ({ showModal, onClose, product }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
   const [messages, setMessages] = useState([]);
+  const [conversationId, setConversationId] = useState(null); // State to store conversation ID
   const dispatch = useDispatch();
   const userConnected = useSelector(userSelector);
 
@@ -18,60 +19,55 @@ const ProductDetailsModal = ({ showModal, onClose, product }) => {
     id_user: userConnected.user.ID_UTILISATEUR,
     telephone: userConnected.user.TELEPHONE,
   };
-
-  let socket;
+  const socketRef = useRef(null); // Use a ref to store the socket instance
 
   useEffect(() => {
     if (product) {
       setMainImage(product.IMAGES_1);
-      fetchMessages(); // Récupérer les messages au chargement du produit
+      fetchConversationId(); // Fetch conversation ID on product load
 
-      // Établir la connexion avec Socket.IO
-      socket = io("http://localhost:8000");
+      // Establish the connection with Socket.IO
+      socketRef.current = io("http://localhost:8000");
 
-      socket.on("connect", () => {
-        console.log("Connexion établie avec Socket.IO !");
+      socketRef.current.on("connect", () => {
+        console.log("Socket.IO connection established!");
       });
 
-      socket.on("chatMessage", (newMessage) => {
-        console.log("Message reçu :", newMessage);
-        setMessages((prevMessages) => [...prevMessages, newMessage]); // Ajoute le nouveau message
+      socketRef.current.on("chatMessage", (newMessage) => {
+        console.log("Received message:", newMessage);
+        setMessages((prevMessages) => [...prevMessages, newMessage]); // Add new message
       });
 
-      socket.on("disconnect", () => {
-        console.log("Connexion fermée !");
+      socketRef.current.on("disconnect", () => {
+        console.log("Socket.IO connection closed!");
       });
 
-      socket.on("error", (error) => {
-        console.error("Erreur Socket.IO :", error);
+      socketRef.current.on("error", (error) => {
+        console.error("Socket.IO error:", error);
       });
 
       return () => {
-        socket.disconnect(); // Déconnexion lors du démontage
+        socketRef.current?.disconnect(); // Disconnect on component unmount
       };
     }
   }, [product]);
 
-  const fetchMessages = async () => {
+  // Fetch conversation ID based on article, buyer, and seller
+  const fetchConversationId = async () => {
     try {
       const response = await fetchApi(
-        `/message/allMessage?articleId=${product.ID_ARTICLE}`
+        `/conversation/conversation/${product.ID_ARTICLE}/${user.id_user}/${product.seller.ID_UTILISATEUR}`
       );
-      if (response.statusCode === 200) {
-        const formattedMessages = response.result.map((msg) => ({
-          text: msg.MESSAGE,
-          sent: true, // Ajuste selon la logique d'utilisateur
-          date: msg.DATE_ENVOYE,
-        }));
-        setMessages(formattedMessages); // Met à jour l'historique des messages
+      console.log(response);
+
+      if (response.statusCode === 200 && response.result?.ID_CONVERSATION) {
+        setConversationId(response.result.ID_CONVERSATION);
+        fetchMessages(response.result.ID_CONVERSATION); // Fetch messages for the specific conversation
       } else {
-        console.error(
-          "Erreur lors de la récupération des messages :",
-          response.message
-        );
+        console.error("Conversation introuvable:", response.message);
       }
     } catch (error) {
-      console.error("Erreur réseau ou serveur :", error);
+      console.error("Erreur réseau ou serveur:", error);
     }
   };
 
@@ -83,47 +79,84 @@ const ProductDetailsModal = ({ showModal, onClose, product }) => {
     if (chatMessage.trim() !== "") {
       const newMessage = {
         text: chatMessage,
-        sent: true,
+        sent: true, // Marque le message comme envoyé par l'utilisateur
         date: new Date().toISOString(),
         ID_UTILISATEUR: user.id_user,
         ID_ARTICLE: product.ID_ARTICLE,
+        ID_CONVERSATION: conversationId,
       };
 
-      // Envoi du message via Socket.IO
-      socket.emit("chatMessage", newMessage); // Utilisation de socket directement
-      setMessages((prevMessages) => [...prevMessages, newMessage]); // Mise à jour immédiate de l'affichage
-      setChatMessage("");
+      // Send the message via Socket.IO
+      if (socketRef.current) {
+        socketRef.current.emit("chatMessage", newMessage); // Emit the message using socketRef
 
-      const formData = new FormData();
-      formData.append("MESSAGE", chatMessage);
-      formData.append("ID_UTILISATEUR", user.id_user);
-      formData.append("ID_ARTICLE", product.ID_ARTICLE);
+        // Do not add to the messages until we confirm it was sent correctly or received from server
+        setChatMessage(""); // Clear the chat message input
 
-      try {
-        const response = await fetchApi("/message/send", {
-          method: "POST",
-          body: formData,
-        });
+        const formData = new FormData();
+        formData.append("MESSAGE", chatMessage);
+        formData.append("ID_BUYER", user.id_user);
+        formData.append("ID_SELLER", product.seller.ID_UTILISATEUR);
+        formData.append("ID_ARTICLE", product.ID_ARTICLE);
+        formData.append("ID_CONVERSATION", conversationId);
 
-        if (response.statusCode === 200) {
-          const { MESSAGE, DATE_ENVOYE } = response.result;
-          // Mettre à jour la date du message avec la date réelle du serveur
-          setMessages((prevMessages) =>
-            prevMessages.map((msg, index) =>
-              index === prevMessages.length - 1
-                ? { ...msg, date: DATE_ENVOYE }
-                : msg
-            )
-          );
-        } else {
-          console.error(
-            "Erreur lors de l'envoi du message :",
-            response.message
-          );
+        try {
+          const response = await fetchApi("/message/send", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (response.statusCode === 200) {
+            const { MESSAGE, DATE_ENVOYE } = response.result;
+
+            // Ensure the message is correctly added with server timestamp
+            setMessages((prevMessages) =>
+              prevMessages.concat({
+                text: MESSAGE,
+                sent: true,
+                date: DATE_ENVOYE, // Use the server's actual date
+                ID_UTILISATEUR: user.id_user,
+                ID_ARTICLE: product.ID_ARTICLE,
+                ID_CONVERSATION: conversationId,
+              })
+            );
+          } else {
+            console.error("Error sending message:", response.message);
+          }
+        } catch (error) {
+          console.error("Network or server error:", error);
         }
-      } catch (error) {
-        console.error("Erreur réseau ou serveur :", error);
+      } else {
+        console.error("Socket.IO is not connected.");
       }
+    }
+  };
+
+  const fetchMessages = async (conversationId) => {
+    try {
+      const response = await fetchApi(
+        `/message/conversation/${conversationId}`
+      );
+      console.log(response);
+
+      if (response.statusCode === 200) {
+        const formattedMessages = response.result.map((msg) => {
+          return {
+            text: msg.MESSAGE,
+            sent: msg.ID_UTILISATEUR === user.id_user, // Vérifier si l'utilisateur a envoyé le message
+            date: msg.DATE_ENVOYE,
+            received: msg.ID_UTILISATEUR !== user.id_user, // Vérifier si le message a été reçu par l'utilisateur
+          };
+        });
+        setMessages(formattedMessages); // Mettre à jour l'historique des messages
+      } else {
+        console.error(
+          "Erreur lors de la récupération des messages:",
+          response.message
+        );
+      }
+    } catch (error) {
+      console.error("Erreur réseau ou serveur:", error);
     }
   };
 
@@ -208,27 +241,39 @@ const ProductDetailsModal = ({ showModal, onClose, product }) => {
             ></i>
           </div>
           <div className="flex-1 overflow-y-auto mb-4">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`mb-2 ${message.sent ? "text-right" : ""}`}
-              >
-                <div
-                  className={`inline-block p-2 rounded-lg ${
-                    message.sent
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-gray-800"
-                  }`}
-                >
-                  {message.text}
-                  <br />
-                  <small className="text-xs text-gray-400">
-                    {new Date(message.date).toLocaleString()}
-                  </small>
-                </div>
-              </div>
-            ))}
+            <div className="flex-1 overflow-y-auto mb-4">
+              {messages.map((message, index) => {
+                const isSent = message.sent; // "sent" est vrai si le message a été envoyé par l'utilisateur
+                const isReceived = message.received; // "received" est vrai si le message a été reçu
+
+                return (
+                  <div
+                    key={index}
+                    className={`mb-2 flex ${
+                      isSent ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`inline-block p-2 rounded-lg max-w-[80%] ${
+                        isSent
+                          ? "bg-teal-100 text-teal-800" // Message envoyé par l'utilisateur
+                          : isReceived
+                          ? "bg-blue-100 text-blue-800" // Message reçu
+                          : "bg-gray-100 text-gray-800" // Autres messages
+                      }`}
+                    >
+                      <span className="text-sm">{message.text}</span>
+                      <br />
+                      <span className="text-xs text-gray-500">
+                        {new Date(message.date).toLocaleTimeString()}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
+
           <div className="flex items-center border-t border-gray-200 pt-2">
             <input
               type="text"

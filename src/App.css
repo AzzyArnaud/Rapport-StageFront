@@ -15,3 +15,16 @@ body {
 .custom-dropdown .p-dropdown-items {
   background-color: #ffffff; /* Assure que les éléments de la liste sont aussi opaques */
 }
+
+/* Style pour le fond du dropdown */
+.p-dropdown-panel {
+  background-color: #f8fafc; /* Fond clair */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Ombre subtile pour plus de profondeur */
+  border-radius: 8px; /* Bords arrondis */
+  border: 1px solid #e5e7eb; /* Bordure gris clair */
+}
+
+/* Option survolée avec un fond plus foncé */
+.p-dropdown-item:hover {
+  background-color: #e2e8f0; /* Fond de survol pour chaque élément */
+}
