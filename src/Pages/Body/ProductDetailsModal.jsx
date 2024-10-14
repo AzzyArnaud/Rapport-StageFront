@@ -51,6 +51,7 @@ const ProductDetailsModal = ({ showModal, onClose, product }) => {
       };
     }
   }, [product]);
+  console.log(product.seller.ID_UTILISATEUR);
 
   // Fetch conversation ID based on article, buyer, and seller
   const fetchConversationId = async () => {
@@ -96,7 +97,7 @@ const ProductDetailsModal = ({ showModal, onClose, product }) => {
         const formData = new FormData();
         formData.append("MESSAGE", chatMessage);
         formData.append("ID_BUYER", user.id_user);
-        formData.append("ID_SELLER", product.seller.ID_UTILISATEUR);
+        // formData.append("ID_SELLER", product.seller.ID_UTILISATEUR);
         formData.append("ID_ARTICLE", product.ID_ARTICLE);
         formData.append("ID_CONVERSATION", conversationId);
 
@@ -137,15 +138,14 @@ const ProductDetailsModal = ({ showModal, onClose, product }) => {
       const response = await fetchApi(
         `/message/conversation/${conversationId}`
       );
-      console.log(response);
 
       if (response.statusCode === 200) {
         const formattedMessages = response.result.map((msg) => {
           return {
             text: msg.MESSAGE,
-            sent: msg.ID_UTILISATEUR === user.id_user, // Vérifier si l'utilisateur a envoyé le message
+            sent: msg.conversation?.ID_BUYER === user.id_user, // Vérifier si l'utilisateur a envoyé le message
             date: msg.DATE_ENVOYE,
-            received: msg.ID_UTILISATEUR !== user.id_user, // Vérifier si le message a été reçu par l'utilisateur
+            received: msg.conversation?.ID_BUYER !== user.id_user,
           };
         });
         setMessages(formattedMessages); // Mettre à jour l'historique des messages
@@ -245,6 +245,7 @@ const ProductDetailsModal = ({ showModal, onClose, product }) => {
               {messages.map((message, index) => {
                 const isSent = message.sent; // "sent" est vrai si le message a été envoyé par l'utilisateur
                 const isReceived = message.received; // "received" est vrai si le message a été reçu
+                console.log(message);
 
                 return (
                   <div
